@@ -11,7 +11,9 @@ import seaborn as sns
 # Combinations
 import itertools
 from pathlib import Path
-
+# Visualizar comunidades 3D
+import random
+import gravis
 
 
 def crear_grafo(sql):
@@ -52,3 +54,38 @@ def visualizar_grafo(G):
 
     plt.axis('off')
     plt.show()
+
+
+
+def visualizar_comunidades(G, particion):
+    vista = G.copy()
+    comunidades = sorted({particion[n] for n in vista.nodes})
+
+    # Generar colores aleatorios sin repetir
+    tonos = random.sample(range(0x1000000), len(comunidades))
+    colores = {
+        comunidad: f"#{tono:06x}"
+        for comunidad, tono in zip(comunidades, tonos)
+    }
+
+    # Colorear los nodos
+    for nodo in vista.nodes:
+        vista.nodes[nodo]["color"] = colores[particion[nodo]]
+        vista.nodes[nodo]["label"] = ""
+
+    # Una etiqueta por comunidad
+    for comunidad in comunidades:
+        representante = next(
+            n for n in vista.nodes if particion[n] == comunidad
+        )
+        vista.nodes[representante]["label"] = f"Comunidad {comunidad}"
+
+    vista.graph["background_color"] = "white"
+    vista.graph["node_label_color"] = "black"
+
+    gravis.three(
+        vista,
+        graph_height=600,
+        node_label_data_source="label",
+        show_node_label=True
+    ).display(inline=True)
